@@ -481,6 +481,11 @@ repository root:
 fusesoc --cores-root=. run --target=synth --setup --build lowrisc:ibex:demo_system
 ```
 
+For Artyz7 target. From the repository root:
+```
+fusesoc --cores-root=. run --target=synth_z7 --setup --build lowrisc:ibex:demo_system
+```
+
 ## Programming FPGA
 
 To program the FPGA, either use FuseSoC again
