@@ -3,11 +3,19 @@ CAPI=2:
 # Licensed under the Apache License, Version 2.0, see LICENSE for details.
 # SPDX-License-Identifier: Apache-2.0
 name: "lowrisc:ibex:demo_system"
-description: "Ibex Demo System for Arty A7 boards (both, -35 and -100)"
+description: "Ibex Demo System for Arty Z7 boards (-20)"
 filesets:
   files_rtl:
     depend:
       - lowrisc:ibex:demo_system_core
+
+  files_xilinx_z7:
+    depend:
+      - lowrisc:ibex:rv_timer
+      - lowrisc:ibex:fpga_xilinx_shared
+    files:
+      - rtl/fpga/top_artyz7.sv
+    file_type: systemVerilogSource
 
   files_xilinx:
     depend:
@@ -44,6 +52,11 @@ filesets:
       - dv/verilator/ibex_demo_system.h:  { file_type: cppSource, is_include_file: true}
       - dv/verilator/ibex_demo_system_main.cc: { file_type: cppSource }
       - dv/verilator/demo_system_verilator_lint.vlt:  { file_type: vlt }
+
+  files_constraints_z7:
+    files:
+      - data/pins_artyz7.xdc
+    file_type: xdc
 
   files_constraints:
     files:
@@ -85,6 +98,21 @@ targets:
   default: &default_target
     filesets:
       - files_rtl
+  
+  synth_z7:
+    <<: *default_target
+    default_tool: vivado
+    filesets_append:
+      - files_xilinx_z7
+      - files_constraints_z7
+    toplevel: top_artyz7
+    tools:
+      vivado:
+        part: "xc7z020clg400-1"  # Default to Arty Z7-20
+    parameters:
+      - SRAMInitFile
+      - PRIM_DEFAULT_IMPL=prim_pkg::ImplXilinx
+
   synth:
     <<: *default_target
     default_tool: vivado
