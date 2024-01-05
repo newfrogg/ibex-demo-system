@@ -442,7 +442,7 @@ module ibex_demo_system #(
     end
   end
 
-  if (DBG) begin : g_dm_top
+  if (DBG) begin : gen_dm_top
     dm_top #(
       .NrHarts ( 1 )
     ) u_dm_top (
@@ -472,12 +472,19 @@ module ibex_demo_system #(
       .host_r_valid_i    (host_rvalid[DbgHost]),
       .host_r_rdata_i    (host_rdata[DbgHost])
     );
-  end else begin
+  end else begin : gen_no_dm
     assign dm_debug_req = 1'b0;
     assign ndmreset_req = 1'b0;
   end
 
   `ifdef VERILATOR
+
+    export "DPI-C" function mhpmcounter_num;
+
+    function automatic int unsigned mhpmcounter_num();
+      return u_top.u_ibex_core.cs_registers_i.MHPMCounterNum;
+    endfunction
+
     export "DPI-C" function mhpmcounter_get;
 
     function automatic longint unsigned mhpmcounter_get(int index);
