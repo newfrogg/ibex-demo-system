@@ -1,6 +1,7 @@
 # https://docs.xilinx.com/r/en-US/ug470_7Series_Config/Configuration-Bitstream-Lengths
 # https://github.com/arduino/OpenOCD/blob/master/tcl/target/zynq_7000.cfg
 # https://github.com/arduino/OpenOCD/blob/master/tcl/interface/ftdi/digilent-hs1.cfg
+# https://github.com/pulp-platform/riscv-dbg/blob/master/doc/debug-system.md
 
 adapter driver ftdi
 transport select jtag

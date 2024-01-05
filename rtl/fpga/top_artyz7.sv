@@ -7,7 +7,6 @@ module top_artyz7 (
   // These inputs are defined in data/pins_artyz7.xdc
   input               clk,
   input               clk_rst,
-  
   input  [ 1:0]       sw,
   input  [ 3:0]       btn,
   output [ 3:0]       led,
