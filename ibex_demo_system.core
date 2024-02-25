@@ -15,6 +15,7 @@ filesets:
       - lowrisc:ibex:fpga_xilinx_shared
     files:
       - rtl/fpga/top_pynqz2.sv
+      - rtl/fpga/clkgen_pynqz2.sv
     file_type: systemVerilogSource
 
   files_xilinx_z7:

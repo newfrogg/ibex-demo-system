@@ -46,7 +46,7 @@ module top_pynqz2 (
   );
 
   // Generating the system clock and reset for the FPGA.
-  clkgen_xil7series clkgen(
+  clkgen_pynqz2 clkgen(
     .IO_CLK(clk),
     .IO_RST_N(clk_rst),
     .clk_sys,
