@@ -1,8 +1,14 @@
+# About the Repository
+This project is a fork of demo system for Ibex targeting Pynq-Z2 board. While the original SoC is based on Artix 7 family board, I try to port the SoC into Zynq7000 board and run Lab 1 successfully including the UART behaviour. My main reference is another fork of Ibex from [nuntipat/ibex-demo-system](https://github.com/nuntipat/ibex-demo-system/tree/port-pynqz2). 
+
+## TODO
+We aim to integrate an RNN accelerator into this SoC.
+
 # Ibex Demo System
 
 ![Ibex demo system block diagram](doc/IbexDemoSystemBlockDiagram.png "Ibex demo system block diagram with in the center an Ibex processor connected by a memory bus to the RAM, GPIO, SPI, UART and debug module. Switches, buttons and LEDs are connected to the GPIO. The LCD is driven by SPI. The UART is used for a serial console. Finally, the debug module is used to drive the JTAG.")
 
-This an example RISC-V SoC targeting the Arty-A7 FPGA board. It comprises the
+This an example RISC-V SoC targeting the Pynq-Z2 FPGA board. It comprises the
 [lowRISC Ibex core](https://www.github.com/lowrisc/ibex) along with the
 following features:
 
@@ -14,22 +20,22 @@ following features:
 * SPI
 * A basic peripheral to write ASCII output to a file and halt simulation from software
 
-Debug can be used via a USB connection to the Arty-A7 board. No external JTAG
-probe is required.
-
-![Arty A7 FPGA showing the Mandelbrot set](doc/ArtyA7WithMandelbrot.png "Arty A7 FPGA with a Mandelbrot fractal on the LCD screen.")
-
 ## Software Requirements
 
 * Xilinx Vivado - https://www.xilinx.com/support/download.html
 * rv32imc GCC toolchain - lowRISC provides one:
   https://github.com/lowRISC/lowrisc-toolchains/releases
-  (For example: `lowrisc-toolchain-rv32imcb-20220524-1.tar.xz`)
+  (For example: `lowrisc-toolchain-rv32imcb-20220524-1.tar.xz`) - remember to and /path/to/lowrisc/toolchains/bin into your **ENV PATH**
 * cmake
 * python3 - Additional python dependencies in python-requirements.txt installed with pip
-* openocd (version 0.11.0 or above)
+* openocd - this should be the latest version (0.12+) from [riscv-collab/riscv-openocd](https://github.com/riscv-collab/riscv-openocd) which is built from source.
 * screen
 * srecord
+* docker - for container purpose only
+
+<details>
+<summary>Container guide could be ignored if you can control the version of packages </summary>
+
 
 ## Container Guide
 
@@ -105,19 +111,29 @@ Go to the folder where you have decompressed the demo system repository:
 ```powershell
 docker run -it --rm -p 6080:6080 -p 3333:3333 -v %cd%:/home/dev/demo:Z ibex
 ```
+ </details>
 
 ## Add udev rules for our device
 For both the container and the native setups you will need to add user device permissions for our FPGA board.
 The following instructions are for Linux-based systems and are needed for the programmer to access the development board.
+Pynq-Z2
 
-Arty-A7
+
+Run the following command to get the information of ftdi chip of Pynq-Z2.
+```bash
+lsusb -v
+```
+This settings bases on the information of FT2232 port. 
+
+E.g: ATTRS{manufacturer} == "TUL" for Pynq-Z2 while ATTRS{manufacturer} == "Digilent" for Arty A7.
+
 ```bash
 
 sudo su
-cat <<EOF > /etc/udev/rules.d/90-arty-a7.rules
+cat <<EOF > /etc/udev/rules.d/90-pynq-z2.rules
 # Future Technology Devices International, Ltd FT2232C/D/H Dual UART/FIFO IC
 # used on Digilent boards
-ACTION=="add|change", SUBSYSTEM=="usb|tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", ATTRS{manufacturer}=="Digilent", MODE="0666"
+ACTION=="add|change", SUBSYSTEM=="usb|tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", ATTRS{manufacturer}=="Digilent|TUL", MODE="0666"
 
 # Future Technology Devices International, Ltd FT232 Serial (UART) IC
 ACTION=="add|change", SUBSYSTEM=="usb|tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", MODE="0666"
@@ -125,8 +141,8 @@ EOF
 
 exit
 ```
+<details> <summary> openFPGAloader setting </summary>
 
-openFPGAloader
 ```bash
 sudo su
 cat <<EOF > /etc/udev/rules.d/99-openfpgaloader.rules
@@ -192,6 +208,7 @@ EOF
 exit
 
 ```
+</details>
 
 Run the following to reload the rules:
 
@@ -367,6 +384,8 @@ sed -i -- "s|sha256\s=\s\".*\";|sha256 = \"$VIVADO_BUNDLED_HASH\";|g" dependenci
 
 </details>
 
+<details> <summary> Same as container setup, virtual environment in Python could be ignored </summary>
+
 ## Native Python Environment
 
 (NOT NEEDED IN THE CONTAINER ENVIRONMENT)
@@ -388,6 +407,7 @@ pip3 install -r python-requirements.txt
 You may need to run the last command twice if you get the following error:
 `ERROR: Failed building wheel for fusesoc`
 
+</details>
 
 ## Building Software
 
@@ -395,28 +415,20 @@ You may need to run the last command twice if you get the following error:
 
 First the software must be built.
 This can be loaded into an FPGA to run on a synthesized Ibex processor, or passed
-to a verilator simulation model to be simulated on a PC.
+to a verilator simulation model to be simulated on a PC. 
+
+***Remember to remove build directory before rerun***
 
 ```
-mkdir sw/c/build
-pushd sw/c/build
-cmake ..
+# rm -rf sw/build/
+mkdir sw/build
+pushd sw/build
+cmake ../c 
 make
 popd
 ```
 
-### Rust stack
-
-```sh
-pushd sw/rust
-cargo build --bin led
-popd
-```
-For more details, please refer to [Ibex Rust stack](sw/rust/README.md).
-
-Note the FPGA build relies on a fixed path to the initial binary (blank.vmem) so
-if you want to create your build directory elsewhere you need to adjust the path
-in `ibex_demo_system.core`
+<details> <summary> Simulation could be ignored </summary>
 
 ## Building Simulation
 
@@ -471,6 +483,7 @@ Compressed Instructions:    164
 Multiply Wait:              0
 Divide Wait:                0
 ```
+</details>
 
 ## Building FPGA bitstream
 
@@ -478,23 +491,13 @@ FuseSoC handles the FPGA build. Vivado tools must be setup beforehand. From the
 repository root:
 
 ```
-fusesoc --cores-root=. run --target=synth --setup --build lowrisc:ibex:demo_system
+fusesoc --cores-root=. run --target=synth_z2 --setup --build lowrisc:ibex:demo_system
 ```
-
-For Artyz7 target. From the repository root:
-```
-fusesoc --cores-root=. run --target=synth_z7 --setup --build lowrisc:ibex:demo_system
-```
-
 ## Programming FPGA
 
-To program the FPGA, either use FuseSoC again
-
-```
-fusesoc --cores-root=. run --target=synth --run lowrisc:ibex:demo_system
-
-# If the above does not work, try executing the programming operation manually with..
-make -C ./build/lowrisc_ibex_demo_system_0/synth-vivado/ pgm
+To program the FPGA, use:
+```bash
+openFPGALoader -b pynq_z2 build/lowrisc_ibex_demo_system_0/synth_z2-vivado/*.bit
 ```
 
 ## Loading an application to the programmed FPGA
@@ -504,11 +507,11 @@ You can choose to immediately run it or begin halted, allowing you to attach a d
 
 ```bash
 # Run demo
-./util/load_demo_system.sh run ./sw/c/build/demo/hello_world/demo
-./util/load_demo_system.sh run ./sw/c/build/demo/lcd_st7735/lcd_st7735
+./util/load_demo_system.sh run ./sw/build/demo/hello_world/demo
+./util/load_demo_system.sh run ./sw/build/demo/lcd_st7735/lcd_st7735
 
 # Load demo and start halted awaiting a debugger
-./util/load_demo_system.sh halt ./sw/c/build/demo/hello_world/demo
+./util/load_demo_system.sh halt ./sw/build/demo/hello_world/demo
 ```
 
 To view terminal output use screen:
@@ -526,16 +529,42 @@ You will need to confirm the exit by pressing `y`.
 
 ## Debugging an application
 
-Either load an application and halt (see above) or start a new OpenOCD instance:
+Either load an application and halt (see above) or start a new OpenOCD instance: 
 
 ```
-openocd -f util/arty-a7-openocd-cfg.tcl
+# -d for printing debug log
+# -f for load file
+openocd -f -d util/pynq-z2-openocd-cfg.tcl
 ```
+
 
 Then run GDB against the running binary and connect to `localhost:3333` as a remote target:
 
 ```bash
-riscv32-unknown-elf-gdb ./sw/c/build/demo/hello_world/demo
+riscv32-unknown-elf-gdb ./sw/build/demo/hello_world/demo
 
 (gdb) target extended-remote localhost:3333
 ```
+
+## Common issues 
+
+- Fail to generate Bitsteam 
+  - Recorrect pin assignments in .xdc file or top module in .sv.
+- Fail to generate Application 
+  - Double check working directory.
+  - Checking cmake & make installed.
+- Fail to load Application into fpga 
+  - Check bitstream loaded.
+  - Check openocd version (version > 0.11 has criitical changes, you should try at least try 0.12)
+  - Risc-openocd is recommended.
+  - Debug module is in PULP format so Failing to load .elf to openocd due to assigning pins to pmod that make a register dmcontrol=0x00 is not active of debug module. Try to avoid assign to pmod pins.
+- Printing unreadable strings (UART)
+  - clk_gen is unique among FPGA boards (or at least FPGA family). Setup false clock configurations can lead to wrong UART message. E.g: **clk_gen_pynqz2** file is different from available **clk_gen** file.
+
+## References
+nuntipat/ibex-demo-system: [https://github.com/nuntipat/ibex-demo-system/tree/port-pynqz2](https://github.com/nuntipat/ibex-demo-system/tree/port-pynqz2)
+
+
+PYNQ-Z2: [https://www.tulembedded.com/FPGA/ProductsPYNQ-Z2.html](https://www.tulembedded.com/FPGA/ProductsPYNQ-Z2.html)
+
+Debug Module did not become active. dmcontrol=0x0: [https://github.com/riscv-collab/riscv-openocd/issues/966](https://github.com/riscv-collab/riscv-openocd/issues/966)
