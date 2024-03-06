@@ -427,8 +427,8 @@ cmake ../c
 make
 popd
 ```
-
-<details> <summary> Simulation could be ignored </summary>
+### IMPORTANT
+<details> <summary> Simulation with Verilator </summary>
 
 ## Building Simulation
 
@@ -439,21 +439,22 @@ repository root run:
 fusesoc --cores-root=. run --target=sim --tool=verilator --setup --build lowrisc:ibex:demo_system
 ```
 
+Note: Newer version of Verilator require at least C++14 compiler.
+
 ## Running the Simulator
 
 Having built the simulator and software, to simulate using Verilator we can use the following commands.
 `<sw_elf_file>` should be a path to an ELF file  (or alternatively a vmem file)
-built as described above. Use `./sw/c/build/demo/hello_world/demo` to run the `demo`
+built as described above. Use `./sw/build/demo/hello_world/demo` to run the `demo`
 binary.
 
 Run from the repository root run:
 ```
 # For example :
-./build/lowrisc_ibex_demo_system_0/sim-verilator/Vibex_demo_system \
-  --meminit=ram,./sw/c/build/demo/hello_world/demo
+./build/lowrisc_ibex_demo_system_0/sim-verilator/Vibex_demo_system -t --meminit=ram,./sw/build/demo/hello_world/demo
 
 # You need to substitute the <sw_elf_file> for a binary we have build above.
-./build/lowrisc_ibex_demo_system_0/sim-verilator/Vibex_demo_system [-t] --meminit=ram,<sw_elf_file>
+./build/lowrisc_ibex_demo_system_0/sim-verilator/Vibex_demo_system -t --meminit=ram,<sw_elf_file>
 
 ```
 
