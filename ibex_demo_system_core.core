@@ -10,6 +10,8 @@ filesets:
       - lowrisc:ibex:ibex_top
       - pulp:riscv:debug_module
     files:
+      - rtl/system/and_gate.sv
+      - rtl/system/and_top.sv
       - rtl/system/ibex_demo_system.sv
       - rtl/system/dm_top.sv
       - rtl/system/debounce.sv

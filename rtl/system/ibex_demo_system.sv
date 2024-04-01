@@ -29,7 +29,7 @@ module ibex_demo_system #(
   output logic                spi_tx_o,
   output logic                spi_sck_o
 );
-  localparam logic [31:0] MEM_SIZE      = 64 * 1024; // 64 KiB
+  localparam logic [31:0] MEM_SIZE      = 108 * 1024; // 64 KiB
   localparam logic [31:0] MEM_START     = 32'h00100000;
   localparam logic [31:0] MEM_MASK      = ~(MEM_SIZE-1);
 
@@ -62,6 +62,10 @@ module ibex_demo_system #(
   parameter logic [31:0] SIM_CTRL_START = 32'h20000;
   parameter logic [31:0] SIM_CTRL_MASK  = ~(SIM_CTRL_SIZE-1);
 
+  localparam logic [31:0] CUSTOM_SIZE     =  4 * 1024; //  4 KiB
+  localparam logic [31:0] CUSTOM_START    = 32'h80008000;
+  localparam logic [31:0] CUSTOM_MASK     = ~(CUSTOM_SIZE-1);
+
   // debug functionality is optional
   localparam bit DBG = 1;
   localparam int unsigned DbgHwBreakNum = (DBG == 1) ?    2 :    0;
@@ -80,15 +84,17 @@ module ibex_demo_system #(
     Timer,
     Spi,
     SimCtrl,
-    DbgDev
+    DbgDev,
+    Custom
   } bus_device_e;
 
-  localparam int NrDevices = DBG ? 8 : 7;
+  localparam int NrDevices = DBG ? 9 : 8;
   localparam int NrHosts = DBG ? 2 : 1;
 
   // interrupts
   logic timer_irq;
   logic uart_irq;
+  logic and2_irq;
 
   // host and device signals
   logic           host_req      [NrHosts];
@@ -156,11 +162,29 @@ module ibex_demo_system #(
   assign cfg_device_addr_base[SimCtrl] = SIM_CTRL_START;
   assign cfg_device_addr_mask[SimCtrl] = SIM_CTRL_MASK;
 
+  assign cfg_device_addr_base[Custom] = CUSTOM_START;
+  assign cfg_device_addr_mask[Custom] = CUSTOM_MASK;
+
   if (DBG) begin : g_dbg_device_cfg
     assign cfg_device_addr_base[DbgDev] = DEBUG_START;
     assign cfg_device_addr_mask[DbgDev] = DEBUG_MASK;
     assign device_err[DbgDev] = 1'b0;
   end
+
+  and_top u_and_top (
+    .clk(clk_sys_i),
+    .rst_ni(rst_sys_ni),
+    .device_req_i   (device_req[Custom]),
+    .device_addr_i  (device_addr[Custom]),
+    .device_we_i    (device_we[Custom]),
+    .device_be_i    (device_be[Custom]),
+    .device_wdata_i (device_wdata[Custom]),
+    .device_rvalid_o(device_rvalid[Custom]),
+    .device_rdata_o (device_rdata[Custom]),
+
+    .and2_irq_o (and2_irq)
+  );
+
 
   // Tie-off unused error signals
   assign device_err[Ram]     = 1'b0;
@@ -169,6 +193,7 @@ module ibex_demo_system #(
   assign device_err[Uart]    = 1'b0;
   assign device_err[Spi]     = 1'b0;
   assign device_err[SimCtrl] = 1'b0;
+  assign device_err[Custom]  = 1'b0;
 
   bus #(
     .NrDevices    ( NrDevices ),
@@ -268,7 +293,7 @@ module ibex_demo_system #(
     .irq_software_i(1'b0),
     .irq_timer_i   (timer_irq),
     .irq_external_i(1'b0),
-    .irq_fast_i    ({14'b0, uart_irq}),
+    .irq_fast_i    ({13'b0, and2_irq, uart_irq}),
     .irq_nm_i      (1'b0),
 
     .scramble_key_valid_i('0),
