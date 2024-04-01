@@ -2,3 +2,6 @@ build/
 .venv/
 target/
 *.fst
+.vscode/
+ibex_demo_system_pcount.csv
+ibex_demo_system.log
