@@ -26,6 +26,7 @@ module and_gate # (
         end
     end
 
+
     // Assign the result to out_o
     assign out_o = result;
 
