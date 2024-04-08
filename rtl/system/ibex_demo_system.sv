@@ -15,7 +15,7 @@ module ibex_demo_system #(
   parameter int GpiWidth     = 8,
   parameter int GpoWidth     = 16,
   parameter int PwmWidth     = 12,
-  parameter     SRAMInitFile = ""
+  parameter     SRAMInitFile = "../../sw/build/blank/blank.vmem"
 ) (
   input logic                 clk_sys_i,
   input logic                 rst_sys_ni,

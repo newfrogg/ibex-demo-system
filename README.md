@@ -452,6 +452,8 @@ Run from the repository root run:
 ```
 # For example :
 ./build/lowrisc_ibex_demo_system_0/sim-verilator/Vibex_demo_system -t --meminit=ram,./sw/build/demo/hello_world/demo
+# Test Ip:
+./build/lowrisc_ibex_demo_system_0/sim-verilator/Vibex_demo_system -t --meminit=ram,./sw/build/demo/test_ip/test_ip
 
 # You need to substitute the <sw_elf_file> for a binary we have build above.
 ./build/lowrisc_ibex_demo_system_0/sim-verilator/Vibex_demo_system -t --meminit=ram,<sw_elf_file>
@@ -480,7 +482,7 @@ Stores:                     55
 Jumps:                      21
 Conditional Branches:       12
 Taken Conditional Branches: 7
-Compressed Instructions:    164
+Compressed Instructions:    164 
 Multiply Wait:              0
 Divide Wait:                0
 ```
@@ -507,10 +509,14 @@ The `util/load_demo_system.sh` script can be used to load and run an application
 You can choose to immediately run it or begin halted, allowing you to attach a debugger.
 
 ```bash
-# Run demo
+# Test IP
+./util/load_demo_system.sh run ./sw/build/demo/test_ip/test_ip
+# Test Accelerator
+./util/load_demo_system.sh run ./sw/build/demo/test_accel/test_accel
+# Run Hello World
 ./util/load_demo_system.sh run ./sw/build/demo/hello_world/demo
+# Run LCD Display
 ./util/load_demo_system.sh run ./sw/build/demo/lcd_st7735/lcd_st7735
-
 # Load demo and start halted awaiting a debugger
 ./util/load_demo_system.sh halt ./sw/build/demo/hello_world/demo
 ```
