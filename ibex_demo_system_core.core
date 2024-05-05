@@ -10,8 +10,6 @@ filesets:
       - lowrisc:ibex:ibex_top
       - pulp:riscv:debug_module
     files:
-      - rtl/system/and_gate.sv
-      - rtl/system/and_top.sv
       - rtl/system/ibex_demo_system.sv
       - rtl/system/dm_top.sv
       - rtl/system/debounce.sv
@@ -21,6 +19,17 @@ filesets:
       - rtl/system/uart.sv
       - rtl/system/spi_host.sv
       - rtl/system/spi_top.sv
+      - rtl/system/controller.sv
+      - rtl/system/lstm_layer.sv
+      - rtl/system/lstm_unit.sv
+      - rtl/system/MAC.sv
+      - rtl/system/sigmoid_appro.sv
+      - rtl/system/sigmoid_appr.sv
+      - rtl/system/tanh_appr_16.sv
+      - rtl/system/tanh_appro.sv  
+      - rtl/system/accel_top.sv
+      - rtl/system/quantization_fc.sv
+      - rtl/system/quantization_lstm.sv
     file_type: systemVerilogSource
 
 targets:

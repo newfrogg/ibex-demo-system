@@ -454,7 +454,8 @@ Run from the repository root run:
 ./build/lowrisc_ibex_demo_system_0/sim-verilator/Vibex_demo_system -t --meminit=ram,./sw/build/demo/hello_world/demo
 # Test Ip:
 ./build/lowrisc_ibex_demo_system_0/sim-verilator/Vibex_demo_system -t --meminit=ram,./sw/build/demo/test_ip/test_ip
-
+# Test Accel:
+./build/lowrisc_ibex_demo_system_0/sim-verilator/Vibex_demo_system -t --meminit=ram,./sw/build/demo/test_accel/test_accel
 # You need to substitute the <sw_elf_file> for a binary we have build above.
 ./build/lowrisc_ibex_demo_system_0/sim-verilator/Vibex_demo_system -t --meminit=ram,<sw_elf_file>
 
