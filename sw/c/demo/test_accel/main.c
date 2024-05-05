@@ -1,35 +1,13 @@
 #include <math.h>
 #include <stdio.h>
 #include <time.h>
-#include <math.h>
-#include "and2.h"
-#include "demo_system.h"
-#include "example.h"
 #include "stdint.h"
 #include "stdbool.h"
-
-void test_and2_irq(void) __attribute__((interrupt));
-
-volatile uint32_t result;
-
-void test_and2_irq(void) {
-  uint32_t a = 9561753;
-  write_input(a);
-  asm volatile("wfi");
-}
+#include "demo_system.h"
 
 int main() {
-  install_exception_handler(AND_IRQ_NUM, &test_and2_irq);
-
-  result = get_result();
-  while(true)
-    puthex(result);
+  float a = sqrtf(4.0);
+  puthex(a);
   return 0;
 }
 
-// int main() {
-//   uint16_t a = 1753, b = 956;
-//   puthex(a & b);
-//   putchar('__');
-//   return 0;
-// }
