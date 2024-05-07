@@ -8,9 +8,8 @@ module and_top (
     input logic [3:0] device_be_i,
     input logic [31:0] device_wdata_i,
     output logic device_rvalid_o,
-    output logic [31:0] device_rdata_o,
+    output logic [31:0] device_rdata_o
 
-    output logic and2_irq_o
 );
     localparam int unsigned AND_INPUT_REG = 32'h4;
     localparam int unsigned AND_OUTPUT_REG = 32'h8;
@@ -31,13 +30,11 @@ module and_top (
     always@(posedge clk or negedge rst_ni) begin
         if(!rst_ni) begin
             device_rvalid_o <= '0;
-            and2_irq_o <= '0;
         end else begin
-            and2_irq_o <= valid;
+
             if(and_o_wr_en) begin
                 {input_and[0], input_and[1]} <= device_wdata_i;
                 enable <= 1'b1;
-
             end
             if(and_i_rd_en) begin
                 device_rvalid_o <= 1'b1;
