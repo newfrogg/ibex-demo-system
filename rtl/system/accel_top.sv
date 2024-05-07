@@ -10,16 +10,16 @@ module accel_top #(
     input  logic [3:0]  device_be_i,
     input  logic [31:0] device_wdata_i,
     output logic        device_rvalid_o,
-    output logic [31:0] device_rdata_o,
+    output logic [31:0] device_rdata_o
     // Host side
-    output logic                  host_req_o,
-    output logic [BusWidth-1:0]   host_add_o,
-    output logic                  host_we_o,
-    output logic [BusWidth-1:0]   host_wdata_o,
-    output logic [BusWidth/8-1:0] host_be_o,
-    input  logic                  host_gnt_i,
-    input  logic                  host_r_valid_i,
-    input  logic [BusWidth-1:0]   host_r_rdata_i
+    // output logic                  host_req_o,
+    // output logic [BusWidth-1:0]   host_add_o,
+    // output logic                  host_we_o,
+    // output logic [BusWidth-1:0]   host_wdata_o,
+    // output logic [BusWidth/8-1:0] host_be_o,
+    // input  logic                  host_gnt_i,
+    // input  logic                  host_r_valid_i,
+    // input  logic [BusWidth-1:0]   host_r_rdata_i
     // interrupt
     // output logic irq_o
 );
@@ -115,7 +115,7 @@ module accel_top #(
 //             | (U  U  U  U) * 32 | (h_t) * 1 |
 //             << accel out fc_out >> // 32 bit
 
-    logic [31:0] red_addr;
+    logic [31:0] reg_addr;
 
     logic ctrl_r_valid;
     logic ctrl_is_last_data_gate;
@@ -163,30 +163,30 @@ module accel_top #(
     // assign rd_H_t_out_x4_4 = device_req_i & ~device_we_i & (reg_addr == H_t_OUT_X4_4);
 
     
-    controller (
+    controller u_crtl (
         .clk,
         .rstn(rst),
         .r_valid(ctrl_r_valid),
         .is_last_data_gate(ctrl_is_last_data_gate),
         .data_in(ctrl_data_in),
-        .r_data(ctrl_data_in),
+        .r_data(ctrl_r_data),
         .w_valid(ctrl_w_valid),
         .t_valid(ctrl_t_valid),
         .out_data(ctrl_out_data)
     );
 
 
-    always@(posedge clk or negedge rst) begin
+    always_ff @(posedge clk or negedge rst) begin
         if(!rst) begin
             device_rvalid_o <= '0;
         end
         else begin
             if (wr_r_valid) begin
-                ctrl_r_valid <= '1;
+                ctrl_r_valid <= device_wdata_i;
             end
 
             if (wr_is_last_data_gate) begin
-                ctrl_is_last_data_gate <= '1;
+                ctrl_is_last_data_gate <= device_wdata_i;
             end
 
             if (rd_r_data) begin

@@ -190,16 +190,16 @@ module ibex_demo_system #(
     .device_be_i    (device_be[AccelDev]),
     .device_wdata_i (device_wdata[AccelDev]),
     .device_rvalid_o(device_rvalid[AccelDev]),
-    .device_rdata_o (device_rdata[AccelDev]),
+    .device_rdata_o (device_rdata[AccelDev])
 
-    .host_req_o        (host_req[AccelHost]),
-    .host_add_o        (host_addr[AccelHost]),
-    .host_we_o         (host_we[AccelHost]),
-    .host_wdata_o      (host_wdata[AccelHost]),
-    .host_be_o         (host_be[AccelHost]),
-    .host_gnt_i        (host_gnt[AccelHost]),
-    .host_r_valid_i    (host_rvalid[AccelHost]),
-    .host_r_rdata_i    (host_rdata[AccelHost])
+    // .host_req_o        (host_req[AccelHost]),
+    // .host_add_o        (host_addr[AccelHost]),
+    // .host_we_o         (host_we[AccelHost]),
+    // .host_wdata_o      (host_wdata[AccelHost]),
+    // .host_be_o         (host_be[AccelHost]),
+    // .host_gnt_i        (host_gnt[AccelHost]),
+    // .host_r_valid_i    (host_rvalid[AccelHost]),
+    // .host_r_rdata_i    (host_rdata[AccelHost])
   );
 
   bus #(
