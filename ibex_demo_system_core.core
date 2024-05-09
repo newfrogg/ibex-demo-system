@@ -26,7 +26,7 @@ filesets:
       - rtl/system/sigmoid_appro.sv
       - rtl/system/sigmoid_appr.sv
       - rtl/system/tanh_appr_16.sv
-      - rtl/system/tanh_appro.sv  
+      - rtl/system/tanh_appr.sv  
       - rtl/system/accel_top.sv
       - rtl/system/quantization_fc.sv
       - rtl/system/quantization_lstm.sv

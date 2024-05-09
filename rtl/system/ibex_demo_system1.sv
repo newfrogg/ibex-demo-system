@@ -79,13 +79,13 @@ module ibex_demo_system #(
 
   typedef enum int {
     Ram,
-    AccelDev,
     Gpio,
     Pwm,
     Uart,
     Timer,
     Spi,
     SimCtrl,
+    AccelDev,
     DbgDev
   } bus_device_e;
 
@@ -177,19 +177,29 @@ module ibex_demo_system #(
   assign device_err[Uart]    = 1'b0;
   assign device_err[Spi]     = 1'b0;
   assign device_err[SimCtrl] = 1'b0;
+  assign device_err[AccelDev] = 1'b0;
 
-  accel_top u_accel(
-    .clk(clk_sys_i),
-    .rst(rst_sys_ni),
+  // accel_top u_accel(
+  //   .clk(clk_sys_i),
+  //   .rst(rst_sys_ni),
 
-    .device_req_i   (device_req[AccelDev]),
-    .device_addr_i  (device_addr[AccelDev]),
-    .device_we_i    (device_we[AccelDev]),
-    .device_be_i    (device_be[AccelDev]),
-    .device_wdata_i (device_wdata[AccelDev]),
-    .device_rvalid_o(device_rvalid[AccelDev]),
-    .device_rdata_o (device_rdata[AccelDev])
-  );
+  //   .device_req_i   (device_req[AccelDev]),
+  //   .device_addr_i  (device_addr[AccelDev]),
+  //   .device_we_i    (device_we[AccelDev]),
+  //   .device_be_i    (device_be[AccelDev]),
+  //   .device_wdata_i (device_wdata[AccelDev]),
+  //   .device_rvalid_o(device_rvalid[AccelDev]),
+  //   .device_rdata_o (device_rdata[AccelDev])
+
+  //   // .host_req_o        (host_req[AccelHost]),
+  //   // .host_add_o        (host_addr[AccelHost]),
+  //   // .host_we_o         (host_we[AccelHost]),
+  //   // .host_wdata_o      (host_wdata[AccelHost]),
+  //   // .host_be_o         (host_be[AccelHost]),
+  //   // .host_gnt_i        (host_gnt[AccelHost]),
+  //   // .host_r_valid_i    (host_rvalid[AccelHost]),
+  //   // .host_r_rdata_i    (host_rdata[AccelHost])
+  // );
 
   bus #(
     .NrDevices    ( NrDevices ),

@@ -1,6 +1,4 @@
-module accel_top #(
-    parameter int BusWidth = 32
-) (
+module accel_top (
     input logic clk, 
     input logic rst,
     // Device side
@@ -23,33 +21,33 @@ module accel_top #(
     // interrupt
     // output logic irq_o
 );
-    // WRITE weight, bias, x_t (input data); h_t (hidden state)
+    // // WRITE weight, bias, x_t (input data); h_t (hidden state)
     localparam int unsigned KERNEL_WEIGHT_F_X3 = 32'h4; // 3 * 8bit (1eight)
-    localparam int unsigned KERNEL_WEIGHT_I_X3 = 32'h8;
-    localparam int unsigned KERNEL_WEIGHT_O_X3 = 32'h12;
-    localparam int unsigned KERNEL_WEIGHT_C_TEMP_X3 = 32'h16;
+    // localparam int unsigned KERNEL_WEIGHT_I_X3 = 32'h8;
+    // localparam int unsigned KERNEL_WEIGHT_O_X3 = 32'h12;
+    // localparam int unsigned KERNEL_WEIGHT_C_TEMP_X3 = 32'h16;
 
-    localparam int unsigned X_t_DATA_3X = 32'h20; // 3 * 8bit (1input)
+    // localparam int unsigned X_t_DATA_3X = 32'h20; // 3 * 8bit (1input)
 
-    localparam int unsigned BIAS_DATA_F_1 = 32'h32;
-    localparam int unsigned BIAS_DATA_I_1 = 32'h36;
-    localparam int unsigned BIAS_DATA_O_1 = 32'h40;
-    localparam int unsigned BIAS_DATA_C_TEMP_1 = 32'h44;
+    // localparam int unsigned BIAS_DATA_F_1 = 32'h32;
+    // localparam int unsigned BIAS_DATA_I_1 = 32'h36;
+    // localparam int unsigned BIAS_DATA_O_1 = 32'h40;
+    // localparam int unsigned BIAS_DATA_C_TEMP_1 = 32'h44;
 
-    localparam int unsigned RECURRENT_KERNEL_WEIGHT_F_X3 = 32'h48;
-    localparam int unsigned RECURRENT_KERNEL_WEIGHT_I_X3 = 32'h52;
-    localparam int unsigned RECURRENT_KERNEL_WEIGHT_O_X3 = 32'h56;
-    localparam int unsigned RECURRENT_KERNEL_WEIGHT_C_TEMP_X3 = 32'h60;
+    // localparam int unsigned RECURRENT_KERNEL_WEIGHT_F_X3 = 32'h48;
+    // localparam int unsigned RECURRENT_KERNEL_WEIGHT_I_X3 = 32'h52;
+    // localparam int unsigned RECURRENT_KERNEL_WEIGHT_O_X3 = 32'h56;
+    // localparam int unsigned RECURRENT_KERNEL_WEIGHT_C_TEMP_X3 = 32'h60;
 
-    localparam int unsigned H_t_DATA_X4_1 = 32'h64;
-    localparam int unsigned H_t_DATA_X4_2 = 32'h68;
-    localparam int unsigned H_t_DATA_X4_3 = 32'h72;
+    // localparam int unsigned H_t_DATA_X4_1 = 32'h64;
+    // localparam int unsigned H_t_DATA_X4_2 = 32'h68;
+    // localparam int unsigned H_t_DATA_X4_3 = 32'h72;
     localparam int unsigned H_t_DATA_X4_4 = 32'h76;
 
-    // READ output (hidden state (output includeded))
+    // // READ output (hidden state (output includeded))
     localparam int unsigned H_t_OUT_X4_1 = 32'h80;
-    localparam int unsigned H_t_OUT_X4_2 = 32'h84;
-    localparam int unsigned H_t_OUT_X4_3 = 32'h88;
+    // localparam int unsigned H_t_OUT_X4_2 = 32'h84;
+    // localparam int unsigned H_t_OUT_X4_3 = 32'h88;
     localparam int unsigned H_t_OUT_X4_4 = 32'h92;
     
     //  Control signal
@@ -62,25 +60,27 @@ module accel_top #(
 // />> LSTM
 // timestep 0: 
 //             [ x_t ]
-//             | (W  W  W  W) * 32 | (I) * 1 | (b b b b) * 32|
-//             | (W  W  W  W) * 32 | (I) * 1 | 
+//             rvalid = 1| (W  W  W  W) * 32 | (I) * 1 | (b b b b) * 32|rvalid = 0
+//             rdata = 1 => rvalid = 1| (W  W  W  W) * 32 | (I) * 1 |rvalid = 0
 //             ..... int(28/3) + 1 times
-//             | (W  W  W  W) * 32 | (I) * 1 | 
+//             is_last_data_gate = 1| (W  W  W  W) * 32 | (I) * 1 | 
 //             [ h_t ] ignored
-//             << accel out h_t >> // 32 h_t 
-//             | (ht ht ht ht) * 8|
+//             << accel out h_t >> // 32 h_t  | wvalid = 1 > out ? wvalid = 0 |
+
+//             | (ht ht ht ht) * 8| is_last_data_gate = 0
 // timestep 1:
 //             [ x_t ]
-//             | (W  W  W  W) * 32 | (I) * 1 | (b b b b) * 32|
-//             | (W  W  W  W) * 32 | (I) * 1 | 
+//             rvalid = 1| (W  W  W  W) * 32 | (I) * 1 | (b b b b) * 32|
+//             rdata = 1 => rvalid = 1| (W  W  W  W) * 32 | (I) * 1 | 
 //             ..... int(28/3) + 1 times
 //             | (W  W  W  W) * 32 | (I) * 1 | 
 //             [ h_t ]
 //             | (U  U  U  U) * 32 | (h_t) * 1 | 
 //             | (U  U  U  U) * 32 | (h_t) * 1 | 
 //             ..... int(32/3) + 1 times
-//             | (U  U  U  U) * 32 | (h_t) * 1 | 
+//             is_last_data_gate = 1| (U  U  U  U) * 32 | (h_t) * 1 | 
 //             << accel out h_t >> // 32 h_t
+//              is_last_data_gate = 0
 // timestep 2:
 //             [ x_t ]
 //             | (W  W  W  W) * 32 | (I) * 1 | (b b b b) * 32|
@@ -116,6 +116,14 @@ module accel_top #(
 //             << accel out fc_out >> // 32 bit
 
     logic [31:0] reg_addr;
+    logic wr_r_valid;
+    logic wr_is_last_data_gate;
+    logic rd_r_data;
+    logic rd_w_valid;
+    logic rd_t_valid;
+    logic wr_enable;
+    logic rd_enable;
+
 
     logic ctrl_r_valid;
     logic ctrl_is_last_data_gate;
@@ -129,12 +137,14 @@ module accel_top #(
     assign wr_r_valid = device_req_i & device_we_i & (reg_addr == READ_VALID);
     assign wr_is_last_data_gate = device_req_i & device_we_i & (reg_addr == IS_LAST_DATA_GATE);
 
-    assign rd_r_data = device_req_i & ~device_we_i & (reg_addr == READ_VALID);
+    assign rd_r_data = device_req_i & ~device_we_i & (reg_addr == READ_DATA);
     assign rd_w_valid = device_req_i & ~device_we_i & (reg_addr == W_VALID);
     assign rd_t_valid = device_req_i & ~device_we_i & (reg_addr == T_VALID);
 
 
-    assign wr_enable = device_req_i & device_we_i & (reg_addr >= KERNEL_WEIGHT_F_X3) & (reg_addr <= H_t_DATA_X4_3);
+    assign wr_enable = device_req_i & device_we_i & (reg_addr >= KERNEL_WEIGHT_F_X3) && (reg_addr <= H_t_DATA_X4_4);
+    assign rd_enable = device_req_i & ~device_we_i & (reg_addr >= H_t_OUT_X4_1) & (reg_addr <= H_t_OUT_X4_4);
+
     // assign wr_kernel_weight_f = device_req_i & device_we_i & (reg_addr == KERNEL_WEIGHT_F_X3);
     // assign wr_kernel_weight_i = device_req_i & device_we_i & (reg_addr == KERNEL_WEIGHT_I_X3);
     // assign wr_kernel_weight_o = device_req_i & device_we_i & (reg_addr == KERNEL_WEIGHT_O_X3);
@@ -156,7 +166,6 @@ module accel_top #(
     // assign wr_H_t_data_x4_2 = device_req_i & device_we_i & (reg_addr == H_t_DATA_X4_2);
     // assign wr_H_t_data_x4_3 = device_req_i & device_we_i & (reg_addr == H_t_DATA_X4_3);
     // assign wr_H_t_data_x4_4 = device_req_i & device_we_i & (reg_addr == H_t_DATA_X4_4);
-    assign rd_enable = device_req_i & ~device_we_i & (reg_addr >= H_t_OUT_X4_1) & (reg_addr <= H_t_OUT_X4_4);
     // assign rd_H_t_out_x4_1 = device_req_i & ~device_we_i & (reg_addr == H_t_OUT_X4_1);
     // assign rd_H_t_out_x4_2 = device_req_i & ~device_we_i & (reg_addr == H_t_OUT_X4_2);
     // assign rd_H_t_out_x4_3 = device_req_i & ~device_we_i & (reg_addr == H_t_OUT_X4_3);
@@ -182,26 +191,26 @@ module accel_top #(
         end
         else begin
             if (wr_r_valid) begin
-                ctrl_r_valid <= device_wdata_i;
+                ctrl_r_valid <= device_wdata_i[0];
             end
 
             if (wr_is_last_data_gate) begin
-                ctrl_is_last_data_gate <= device_wdata_i;
+                ctrl_is_last_data_gate <= device_wdata_i[0];
             end
 
             if (rd_r_data) begin
                 device_rvalid_o <= '1;
-                device_rdata_o <= ctrl_r_data;
+                device_rdata_o[0] <= ctrl_r_data;
             end
 
             if (rd_w_valid) begin
                 device_rvalid_o <= '1;
-                device_rdata_o <= ctrl_w_valid;
+                device_rdata_o[0] <= ctrl_w_valid;
             end
 
             if (rd_t_valid) begin
                 device_rvalid_o <= '1;
-                device_rdata_o <= ctrl_t_valid;
+                device_rdata_o[0] <= ctrl_t_valid;
             end
 
             if (wr_enable) begin
@@ -215,5 +224,7 @@ module accel_top #(
         end
     end
 
+    logic [3:0] unused_be; 
+    assign unused_be = device_be_i;
 
 endmodule

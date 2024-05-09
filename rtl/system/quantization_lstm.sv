@@ -1,4 +1,3 @@
-`timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 // Company: 
 // Engineer: 
@@ -32,18 +31,14 @@ module quantization_lstm(
     
     localparam
         O_STATE         = 0,
-        C_STATE         = 1,
         O_Q_STEP        = 32'h0020143B,
         O_Q_RSHIFT      = 28,
-        O_Q_ZERO        = 16'h0001,
-        C_Q_STEP        = 1,
-        C_Q_RSHIFT      = 11,
-        C_Q_ZERO        = 0;
+        O_Q_ZERO        = 16'h0001;
         
     logic [63:0]    out_temp;
     logic [1:0]     count;
     
-//    assign data_out = out_temp[7:0];
+    assign data_out = out_temp[7:0];
     
     always @(posedge clk or negedge rstn) begin
         if (!rstn) begin
@@ -60,10 +55,11 @@ module quantization_lstm(
             else begin
                 count   <= count + 1;
                 if (type_state == O_STATE) begin
+                    /* verilator lint_off WIDTHEXPAND */
                     if (count == 0) out_temp <= (data_in + O_Q_ZERO);
                     else if (count == 1) out_temp <= out_temp * O_Q_STEP;
                     else if (count == 2) begin
-                        data_out    <= out_temp >>> O_Q_RSHIFT;
+                        out_temp    <= out_temp >>> O_Q_RSHIFT;
                         done        <= 1;
                     end
                     else ;    
@@ -73,7 +69,7 @@ module quantization_lstm(
                         out_temp    <= data_in >>> 11;
                     end
                     else if (count == 1) begin
-                        data_out    <= out_temp;
+                        out_temp    <= out_temp;
                         done        <= 1'b1;
                     end
                     else ;
