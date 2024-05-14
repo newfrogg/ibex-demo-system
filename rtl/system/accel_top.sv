@@ -9,17 +9,7 @@ module accel_top (
     input  logic [31:0] device_wdata_i,
     output logic        device_rvalid_o,
     output logic [31:0] device_rdata_o
-    // Host side
-    // output logic                  host_req_o,
-    // output logic [BusWidth-1:0]   host_add_o,
-    // output logic                  host_we_o,
-    // output logic [BusWidth-1:0]   host_wdata_o,
-    // output logic [BusWidth/8-1:0] host_be_o,
-    // input  logic                  host_gnt_i,
-    // input  logic                  host_r_valid_i,
-    // input  logic [BusWidth-1:0]   host_r_rdata_i
-    // interrupt
-    // output logic irq_o
+
 );
     // // WRITE weight, bias, x_t (input data); h_t (hidden state)
     localparam int unsigned KERNEL_WEIGHT_F_X3 = 32'h4; // 3 * 8bit (1eight)
@@ -51,9 +41,9 @@ module accel_top (
     localparam int unsigned H_t_OUT_X4_4 = 32'h92;
     
     //  Control signal
-    localparam int unsigned READ_VALID = 32'h96;
+    localparam int unsigned R_VALID = 32'h96;
     localparam int unsigned IS_LAST_DATA_GATE = 32'h100;
-    localparam int unsigned READ_DATA = 32'h104;
+    localparam int unsigned R_DATA = 32'h104;
     localparam int unsigned W_VALID = 32'h108;
     localparam int unsigned T_VALID = 32'h112;
 
@@ -115,14 +105,14 @@ module accel_top (
 //             | (U  U  U  U) * 32 | (h_t) * 1 |
 //             << accel out fc_out >> // 32 bit
 
-    logic [31:0] reg_addr;
+    logic [11:0] reg_addr;
     logic wr_r_valid;
     logic wr_is_last_data_gate;
     logic rd_r_data;
     logic rd_w_valid;
     logic rd_t_valid;
-    logic wr_enable;
-    logic rd_enable;
+    logic wr_data_in;
+    logic rd_data_out;
 
 
     logic ctrl_r_valid;
@@ -133,17 +123,18 @@ module accel_top (
     logic ctrl_t_valid;
     logic [31:0] ctrl_out_data;
     
-    assign reg_addr = device_addr_i - 32'h80005000;
-    assign wr_r_valid = device_req_i & device_we_i & (reg_addr == READ_VALID);
-    assign wr_is_last_data_gate = device_req_i & device_we_i & (reg_addr == IS_LAST_DATA_GATE);
+    assign reg_addr = device_addr_i[11:0];
+    
+    assign wr_r_valid = device_req_i & device_we_i & (reg_addr == R_VALID[11:0]);
+    assign wr_is_last_data_gate = device_req_i & device_we_i & (reg_addr == IS_LAST_DATA_GATE[11:0]);
+    assign wr_data_in = device_req_i & device_we_i & (reg_addr >= KERNEL_WEIGHT_F_X3[11:0]) & (reg_addr <= H_t_DATA_X4_4[11:0]);
 
-    assign rd_r_data = device_req_i & ~device_we_i & (reg_addr == READ_DATA);
-    assign rd_w_valid = device_req_i & ~device_we_i & (reg_addr == W_VALID);
-    assign rd_t_valid = device_req_i & ~device_we_i & (reg_addr == T_VALID);
+    assign rd_r_data = device_req_i & ~device_we_i & (reg_addr == R_DATA[11:0]);
+    assign rd_w_valid = device_req_i & ~device_we_i & (reg_addr == W_VALID[11:0]);
+    assign rd_t_valid = device_req_i & ~device_we_i & (reg_addr == T_VALID[11:0]);
 
 
-    assign wr_enable = device_req_i & device_we_i & (reg_addr >= KERNEL_WEIGHT_F_X3) && (reg_addr <= H_t_DATA_X4_4);
-    assign rd_enable = device_req_i & ~device_we_i & (reg_addr >= H_t_OUT_X4_1) & (reg_addr <= H_t_OUT_X4_4);
+    assign rd_data_out = device_req_i & ~device_we_i & (reg_addr >= H_t_OUT_X4_1[11:0]) & (reg_addr <= H_t_OUT_X4_4[11:0]);
 
     // assign wr_kernel_weight_f = device_req_i & device_we_i & (reg_addr == KERNEL_WEIGHT_F_X3);
     // assign wr_kernel_weight_i = device_req_i & device_we_i & (reg_addr == KERNEL_WEIGHT_I_X3);
@@ -213,18 +204,21 @@ module accel_top (
                 device_rdata_o[0] <= ctrl_t_valid;
             end
 
-            if (wr_enable) begin
+            if (wr_data_in) begin
                 ctrl_data_in <= device_wdata_i;
             end
 
-            if (rd_enable) begin
+            if (rd_data_out) begin
                 device_rvalid_o <= '1;
                 device_rdata_o <= ctrl_out_data;
             end
         end
     end
 
-    logic [3:0] unused_be; 
-    assign unused_be = device_be_i;
+    logic unused_be; 
+    logic unused_device_addr_i;
+
+    assign unused_be = ^device_be_i;
+    assign unused_device_addr_i = ^device_addr_i[31:12];
 
 endmodule

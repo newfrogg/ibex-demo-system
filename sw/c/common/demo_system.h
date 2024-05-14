@@ -10,9 +10,7 @@
 #include "demo_system_regs.h"
 #include "gpio.h"
 #include "uart.h"
-
-#define AND_IRQ_NUM 17
-#define AND_IRQ (1 << AND_IRQ_NUM)
+#include "accel.h"
 
 #define UART_IRQ_NUM 16
 #define UART_IRQ (1 << UART_IRQ_NUM)

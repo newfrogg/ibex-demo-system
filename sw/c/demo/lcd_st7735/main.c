@@ -54,7 +54,9 @@ int main(void) {
 
   // Reset LCD.
   set_output_bit(GPIO_OUT, LcdRstPin, 0x0);
+  // puts("waiting for 5s\n");
   timer_delay(150);
+  // puts("end for 5s\n");
   set_output_bit(GPIO_OUT, LcdRstPin, 0x1);
 
   // Init LCD driver and set the SPI driver.

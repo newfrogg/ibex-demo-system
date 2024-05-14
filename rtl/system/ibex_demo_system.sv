@@ -73,7 +73,6 @@ module ibex_demo_system #(
 
   typedef enum int {
     CoreD,
-    AccelHost,
     DbgHost
   } bus_host_e;
 
@@ -90,7 +89,7 @@ module ibex_demo_system #(
   } bus_device_e;
 
   localparam int NrDevices = DBG ? 9 : 8;
-  localparam int NrHosts = DBG ? 3 : 2;
+  localparam int NrHosts = DBG ? 2 : 1;
 
   // interrupts
   logic timer_irq;
@@ -177,6 +176,7 @@ module ibex_demo_system #(
   assign device_err[Uart]    = 1'b0;
   assign device_err[Spi]     = 1'b0;
   assign device_err[SimCtrl] = 1'b0;
+  assign device_err[AccelDev] = 1'b0;
 
   accel_top u_accel(
     .clk(clk_sys_i),
