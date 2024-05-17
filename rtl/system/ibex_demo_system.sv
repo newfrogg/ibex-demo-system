@@ -15,7 +15,7 @@ module ibex_demo_system #(
   parameter int GpiWidth     = 8,
   parameter int GpoWidth     = 16,
   parameter int PwmWidth     = 12,
-  parameter     SRAMInitFile = "../../sw/build/blank/blank.vmem"
+  parameter     SRAMInitFile = ""
 ) (
   input logic                 clk_sys_i,
   input logic                 rst_sys_ni,
@@ -29,7 +29,7 @@ module ibex_demo_system #(
   output logic                spi_tx_o,
   output logic                spi_sck_o
 );
-  localparam logic [31:0] MEM_SIZE      = 108 * 1024; // 64 KiB
+  localparam logic [31:0] MEM_SIZE      = 64 * 1024; // 64 KiB
   localparam logic [31:0] MEM_START     = 32'h00100000;
   localparam logic [31:0] MEM_MASK      = ~(MEM_SIZE-1);
 
@@ -62,9 +62,9 @@ module ibex_demo_system #(
   parameter logic [31:0] SIM_CTRL_START = 32'h20000;
   parameter logic [31:0] SIM_CTRL_MASK  = ~(SIM_CTRL_SIZE-1);
 
-  parameter logic [31:0] ACCEL_SIZE  = 1 * 1024; // 1kB
-  parameter logic [31:0] ACCEL_START = 32'h80005000;
-  parameter logic [31:0] ACCEL_MASK  = ~(ACCEL_SIZE-1); 
+  localparam logic [31:0] ACCEL_SIZE  = 4 * 1024; // 4kB
+  localparam logic [31:0] ACCEL_START = 32'h80008000;
+  localparam logic [31:0] ACCEL_MASK  = ~(ACCEL_SIZE-1); 
 
   // debug functionality is optional
   localparam bit DBG = 1;
@@ -78,14 +78,14 @@ module ibex_demo_system #(
 
   typedef enum int {
     Ram,
-    AccelDev,
     Gpio,
     Pwm,
     Uart,
     Timer,
     Spi,
     SimCtrl,
-    DbgDev
+    DbgDev,
+    AccelDev
   } bus_device_e;
 
   localparam int NrDevices = DBG ? 9 : 8;
@@ -160,6 +160,7 @@ module ibex_demo_system #(
   assign cfg_device_addr_mask[Spi]     = SPI_MASK;
   assign cfg_device_addr_base[SimCtrl] = SIM_CTRL_START;
   assign cfg_device_addr_mask[SimCtrl] = SIM_CTRL_MASK;
+
   assign cfg_device_addr_base[AccelDev] = ACCEL_START;
   assign cfg_device_addr_mask[AccelDev] = ACCEL_MASK;
 
@@ -178,10 +179,11 @@ module ibex_demo_system #(
   assign device_err[SimCtrl] = 1'b0;
   assign device_err[AccelDev] = 1'b0;
 
+
+
   accel_top u_accel(
     .clk(clk_sys_i),
     .rst(rst_sys_ni),
-
     .device_req_i   (device_req[AccelDev]),
     .device_addr_i  (device_addr[AccelDev]),
     .device_we_i    (device_we[AccelDev]),
@@ -289,7 +291,7 @@ module ibex_demo_system #(
     .irq_software_i(1'b0),
     .irq_timer_i   (timer_irq),
     .irq_external_i(1'b0),
-    .irq_fast_i    ({14'b0,uart_irq}),
+    .irq_fast_i    ({14'b0, uart_irq}),
     .irq_nm_i      (1'b0),
 
     .scramble_key_valid_i('0),

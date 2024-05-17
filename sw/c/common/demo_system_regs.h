@@ -18,7 +18,7 @@
 #define SIM_CTRL_BASE 0x20000
 #define SIM_CTRL_OUT 0x0
 #define SIM_CTRL_CTRL 0x8
-// Accel config start
-#define ACCEL_BASE 0x80005000
-// Accel config end
+
+#define ACCEL_BASE 0x80008000
+
 #endif

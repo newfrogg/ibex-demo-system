@@ -11,9 +11,6 @@
 #include "timer.h"
 
 #define USE_GPIO_SHIFT_REG 0
-#define MAX_TIMESTEP 28
-#define MAX_X_T_TIMES 10
-#define MAX_H_T_TIMES 11
 
 // INTPUT x_test
 uint32_t x_test[280] = {
@@ -112,6 +109,7 @@ uint32_t x_test[280] = {
     0b00000000100000001000000010000000, 0b00000000100000001000000010000000, 0b00000000100000001000000010000000,
     0b00000000000000000000000010000000};
 
+#pragma region
 //  LSTM MODEL
 uint32_t lstm_bias_cell[] = {
     0b00000000000000000001010000000001, 0b11111111111111111111101011111001, 0b11111111111111111111111000101010,
@@ -2086,39 +2084,53 @@ uint32_t dense_weight[] = {
     0b00000000111010111100000100000100, 0b00000000000010111111001111110110, 0b00000000000111100000100000001011,
     0b00000000000111001110111100001000, 0b00000000000000000100001111101100};
 
+#pragma endregion
 // OUTPUT
 uint8_t label = 7;
 
 /*
   Beginning of user-defined variables
 */
-uint32_t temp = 0;
+#define MAX_TIMESTEP 28
+#define MAX_W_COUNT 32 * 4
+#define MAX_I_COUNT 32
+#define MAX_CYCLE 200
 
-uint32_t r_data = 0;
+uint8_t isInit = 1;
 
+uint8_t isRunning = 1;
+int64_t cycle     = MAX_CYCLE;
+
+uint8_t timestep = 0;
+uint8_t x_count  = 0;
+uint8_t w_count  = 0;
+uint8_t i_count  = 0;
+
+uint32_t r_data  = 0;
 uint32_t w_valid = 0;
-
 uint32_t t_valid = 0;
 
-uint32_t out_data = 0;
-
+uint32_t out_data_1 = 0;
+uint32_t out_data_2 = 0;
+uint32_t out_data_3 = 0;
+uint32_t out_data_4 = 0;
 /*
   End of user-defined variables
 */
-
-static void timer_delay(uint32_t ms) {
-  // Configure timer to trigger every 1 ms
-  timer_enable(50000);
-  uint32_t timeout = get_elapsed_time() + ms;
-  while (get_elapsed_time() < timeout) {
-    asm volatile("wfi");
-  }
-  timer_disable();
+void showSTART() {
+  puts("\n");
+  puts("---------------------------------------------------------------------------");
+  puts(" START ");
+  puts("---------------------------------------------------------------------------\n");
+  puts("[UART] Start sending.....\n");
 }
-uint8_t flag = 1;
 
-uint64_t timestep = 100;
-uint8_t x_iter    = 0;
+void showEND() {
+  puts("[UART] End sending !!!\n");
+  puts("---------------------------------------------------------------------------");
+  puts("- END -");
+  puts("---------------------------------------------------------------------------\n");
+}
 int main(void) {
   // install_exception_handler(UART_IRQ_NUM, &test_uart_irq_handler);
 
@@ -2140,7 +2152,6 @@ int main(void) {
 
       // Disable interrupts whilst outputting to prevent output for RX IRQ
       // happening in the middle
-
       set_global_interrupt_enable(0);
 
       // Print this to UART (use the screen command to see it).
@@ -2149,23 +2160,6 @@ int main(void) {
       // puts("   Input Value: ");
       uint32_t in_val = read_gpio(GPIO_IN_DBNC);
       // puthex(in_val);
-
-      // puts(" [OUTPUT] r_data: ");
-      // r_data = read_r_data();
-      // puthex(r_data);
-
-      // puts(" [OUTPUT] w_valid: ");
-      // w_valid = read_w_valid();
-      // puthex(w_valid);
-
-      // puts(" [OUTPUT] t_valid: ");
-      // t_valid = read_t_valid();
-      // puthex(t_valid);
-
-      // puts(" [OUTPUT] out_data: ");
-      // out_data = read_r_data(H_t_OUT_X4_1);
-      // puthex(out_data);
-      // puts("\n");
 
       // // Re-enable interrupts with output complete
       set_global_interrupt_enable(1);
@@ -2186,73 +2180,81 @@ int main(void) {
         }
         set_outputs(GPIO_OUT, out_val);
       }
+      /*
+        User define code
+      */
+
+      // TODO
+      if (isRunning == 1) {
+        if (cycle == 1) write_r_valid(1);
+        if (cycle == 2) write_data_in(lstm_whf[0], KERNEL_WEIGHT_F_X3);
+        if (cycle == 3) write_data_in(lstm_whi[0], KERNEL_WEIGHT_I_X3);
+        if (cycle == 4) write_data_in(lstm_who[0], KERNEL_WEIGHT_O_X3);
+        if (cycle == 5) write_data_in(lstm_whc[0], KERNEL_WEIGHT_C_TEMP_X3);
+        if (cycle == 6) write_data_in(lstm_whf[1], KERNEL_WEIGHT_F_X3);
+        if (cycle == 7) write_data_in(lstm_whi[1], KERNEL_WEIGHT_I_X3);
+        if (cycle == 8) write_data_in(lstm_who[1], KERNEL_WEIGHT_O_X3);
+        if (cycle == 9) write_data_in(lstm_whc[1], KERNEL_WEIGHT_C_TEMP_X3);
+        if (cycle == 10) write_data_in(lstm_whf[2], KERNEL_WEIGHT_F_X3);
+        if (cycle == 11) write_data_in(lstm_whi[2], KERNEL_WEIGHT_I_X3);
+        if (cycle == 12) write_data_in(lstm_who[2], KERNEL_WEIGHT_O_X3);
+        if (cycle == 13) write_data_in(lstm_whc[2], KERNEL_WEIGHT_C_TEMP_X3);
+      }
+
+      /*
+      MAIN Printing for DEBUG
+      */
+      if (isInit == 1) {
+        showSTART();
+        isInit = 0;
+      }
+
+      if (isRunning == 1) {
+        // PRINT OUTPUT
+        #pragma region
+        puts("#cycle: ");
+        puthex(cycle);
+
+        puts(" r_data=>");
+        r_data = read_r_data();
+        puthex(r_data);
+
+        puts(" w_valid=>");
+        w_valid = read_w_valid();
+        puthex(w_valid);
+
+        puts(" t_valid=>");
+        t_valid = read_t_valid();
+        puthex(t_valid);
+
+        puts(" out_data_1=>");
+        out_data_1 = read_r_data(H_t_OUT_X4_1);
+        puthex(out_data_1);
+
+        puts(" out_data_2=>");
+        out_data_2 = read_r_data(H_t_OUT_X4_2);
+        puthex(out_data_2);
+
+        puts(" out_data_3=>");
+        out_data_3 = read_r_data(H_t_OUT_X4_3);
+        puthex(out_data_4);
+
+        puts(" out_data_4=>");
+        out_data_4 = read_r_data(H_t_OUT_X4_4);
+        puthex(out_data_4);
+
+        puts("\n");
+        #pragma endregion
+
+        if (cycle != 0) {
+          cycle--;
+        } else {
+          showEND();
+          isRunning = 0;
+        }
+      }
     }
-    // puts("flag = ");
-    // puthex(flag);
-    // puts("\n");
 
-    // flag--;
-    // if (flag == 0) {
-    //   write_r_valid(1);
-    //   // puts("dasda12\n");
-    //   // write_is_last_data_gate(12);
-    //   flag = 10;
-    // }
-
-    if (flag == 1) {
-      puts("time step = ");
-      puthex(timestep);
-      puts("\n");
-      if (timestep != 0)
-        timestep--;
-      else
-        flag = 0;
-    }
-
-    // for (uint8_t timestep = 0; timestep < 28; timestep++) {
-    //   if (timestep == 0) {
-    //     for (uint8_t x_iter = 0; x_iter < 10; x_iter++) {
-    //       if (x_iter == 0) {
-    //         write_r_valid(1);
-    //         // puts("r1_valid = 1\n");
-    //         // for (uint8_t iter = 0; iter < 32; iter++) {
-    //         //   write_data_in(KERNEL_WEIGHT_F_X3, lstm_whf[x_iter * 32 + iter]);
-    //         //   write_data_in(KERNEL_WEIGHT_I_X3, lstm_whi[x_iter * 32 + iter]);
-    //         //   write_data_in(KERNEL_WEIGHT_O_X3, lstm_who[x_iter * 32 + iter]);
-    //         //   write_data_in(KERNEL_WEIGHT_C_TEMP_X3, lstm_whc[x_iter * 32 + iter]);
-    //         // }
-    //         // write_data_in(X_t_DATA_3X, x_test[10 * timestep + x_iter]);
-    //         // for (uint8_t iter = 0; iter < 32; iter++) {
-    //         //   write_data_in(BIAS_DATA_F_1, lstm_whf[x_iter * 32 + iter]);
-    //         //   write_data_in(BIAS_DATA_I_1, lstm_whi[x_iter * 32 + iter]);
-    //         //   write_data_in(BIAS_DATA_O_1, lstm_who[x_iter * 32 + iter]);
-    //         //   write_data_in(BIAS_DATA_C_TEMP_1, lstm_whc[x_iter * 32 + iter]);
-    //         // }
-    //         // write_r_valid(0);
-    //       } else {
-    //         continue;
-    //         //   if (r_data == 1) {
-    //         //     write_r_valid(1);
-    //         //     for (uint8_t iter = 0; iter < 32; iter++) {
-    //         //       write_data_in(KERNEL_WEIGHT_F_X3, lstm_whf[x_iter * 32 + iter]);
-    //         //       write_data_in(KERNEL_WEIGHT_I_X3, lstm_whi[x_iter * 32 + iter]);
-    //         //       write_data_in(KERNEL_WEIGHT_O_X3, lstm_who[x_iter * 32 + iter]);
-    //         //       write_data_in(KERNEL_WEIGHT_C_TEMP_X3, lstm_whc[x_iter * 32 + iter]);
-    //         //     }
-    //         //     write_data_in(X_t_DATA_3X, x_test[10 * timestep + x_iter]);
-    //         //     for (uint8_t iter = 0; iter < 32; iter++) {
-    //         //       write_data_in(BIAS_DATA_F_1, lstm_whf[x_iter * 32 + iter]);
-    //         //       write_data_in(BIAS_DATA_I_1, lstm_whi[x_iter * 32 + iter]);
-    //         //       write_data_in(BIAS_DATA_O_1, lstm_who[x_iter * 32 + iter]);
-    //         //       write_data_in(BIAS_DATA_C_TEMP_1, lstm_whc[x_iter * 32 + iter]);
-    //         //     }
-    //         //     write_r_valid(0);
-    //         //   }
-    //         // }
-    //       }
-    //     }
-    //   }
-    // }
     asm volatile("wfi");
   }
 }

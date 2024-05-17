@@ -12,40 +12,41 @@ module accel_top (
 
 );
     // // WRITE weight, bias, x_t (input data); h_t (hidden state)
-    localparam int unsigned KERNEL_WEIGHT_F_X3 = 32'h4; // 3 * 8bit (1eight)
-    // localparam int unsigned KERNEL_WEIGHT_I_X3 = 32'h8;
-    // localparam int unsigned KERNEL_WEIGHT_O_X3 = 32'h12;
-    // localparam int unsigned KERNEL_WEIGHT_C_TEMP_X3 = 32'h16;
+    localparam int unsigned KERNEL_WEIGHT_F_X3 = 32'h04; // 3 * 8bit (1eight)
+    // localparam int unsigned KERNEL_WEIGHT_I_X3 = 32'h08;
+    // localparam int unsigned KERNEL_WEIGHT_O_X3 = 32'h0c;
+    // localparam int unsigned KERNEL_WEIGHT_C_TEMP_X3 = 32'h10;
 
-    // localparam int unsigned X_t_DATA_3X = 32'h20; // 3 * 8bit (1input)
+    // localparam int unsigned X_t_DATA_3X = 32'h14; // 3 * 8bit (1input)
 
-    // localparam int unsigned BIAS_DATA_F_1 = 32'h32;
-    // localparam int unsigned BIAS_DATA_I_1 = 32'h36;
-    // localparam int unsigned BIAS_DATA_O_1 = 32'h40;
-    // localparam int unsigned BIAS_DATA_C_TEMP_1 = 32'h44;
+    // localparam int unsigned BIAS_DATA_F_1 = 32'h18;
+    // localparam int unsigned BIAS_DATA_I_1 = 32'h1C;
+    // localparam int unsigned BIAS_DATA_O_1 = 32'h20;
+    // localparam int unsigned BIAS_DATA_C_TEMP_1 = 32'h24;
 
-    // localparam int unsigned RECURRENT_KERNEL_WEIGHT_F_X3 = 32'h48;
-    // localparam int unsigned RECURRENT_KERNEL_WEIGHT_I_X3 = 32'h52;
-    // localparam int unsigned RECURRENT_KERNEL_WEIGHT_O_X3 = 32'h56;
-    // localparam int unsigned RECURRENT_KERNEL_WEIGHT_C_TEMP_X3 = 32'h60;
+    // localparam int unsigned RECURRENT_KERNEL_WEIGHT_F_X3 = 32'h28;
+    // localparam int unsigned RECURRENT_KERNEL_WEIGHT_I_X3 = 32'h2c;
+    // localparam int unsigned RECURRENT_KERNEL_WEIGHT_O_X3 = 32'h30;
+    // localparam int unsigned RECURRENT_KERNEL_WEIGHT_C_TEMP_X3 = 32'h34;
 
-    // localparam int unsigned H_t_DATA_X4_1 = 32'h64;
-    // localparam int unsigned H_t_DATA_X4_2 = 32'h68;
-    // localparam int unsigned H_t_DATA_X4_3 = 32'h72;
-    localparam int unsigned H_t_DATA_X4_4 = 32'h76;
+    // localparam int unsigned H_t_DATA_X4_1 = 32'h38;
+    // localparam int unsigned H_t_DATA_X4_2 = 32'h3c;
+    // localparam int unsigned H_t_DATA_X4_3 = 32'h40;
+    localparam int unsigned H_t_DATA_X4_4 = 32'h44;
 
     // // READ output (hidden state (output includeded))
-    localparam int unsigned H_t_OUT_X4_1 = 32'h80;
-    // localparam int unsigned H_t_OUT_X4_2 = 32'h84;
-    // localparam int unsigned H_t_OUT_X4_3 = 32'h88;
-    localparam int unsigned H_t_OUT_X4_4 = 32'h92;
+    localparam int unsigned H_t_OUT_X4_1 = 32'h48;
+    // localparam int unsigned H_t_OUT_X4_2 = 32'h4c;
+    // localparam int unsigned H_t_OUT_X4_3 = 32'h50;
+    localparam int unsigned H_t_OUT_X4_4 = 32'h54;
     
     //  Control signal
-    localparam int unsigned R_VALID = 32'h96;
-    localparam int unsigned IS_LAST_DATA_GATE = 32'h100;
-    localparam int unsigned R_DATA = 32'h104;
-    localparam int unsigned W_VALID = 32'h108;
-    localparam int unsigned T_VALID = 32'h112;
+    localparam int unsigned R_VALID = 32'h58;
+    localparam int unsigned IS_LAST_DATA_GATE = 32'h5c;
+    localparam int unsigned R_DATA = 32'h60;
+    localparam int unsigned W_VALID = 32'h64;
+    localparam int unsigned T_VALID = 32'h68;
+
 
 // />> LSTM
 // timestep 0: 
@@ -68,8 +69,8 @@ module accel_top (
 //             | (U  U  U  U) * 32 | (h_t) * 1 | 
 //             | (U  U  U  U) * 32 | (h_t) * 1 | 
 //             ..... int(32/3) + 1 times
-//             is_last_data_gate = 1| (U  U  U  U) * 32 | (h_t) * 1 | 
-//             << accel out h_t >> // 32 h_t
+//             is_last_data_gate = 1| (U  U  U  U) * 32 | (h_t) * 1 | w_valid = 0|
+//             w_valid = 1| << accel out h_t >> // 32 h_t
 //              is_last_data_gate = 0
 // timestep 2:
 //             [ x_t ]
@@ -100,10 +101,11 @@ module accel_top (
 // accel_h-t => 28 *  32 
 // />> FC
 //             | (U  U  U  U) * 32 | (h_t) * 1 | 
-//             | (U  U  U  U) * 32 | (h_t) * 1 | 
+//             | (U  U  U  U) * 32 | (h_t) * 1 |
 //             ..... int(28 * 32/3) + 1 times
 //             | (U  U  U  U) * 32 | (h_t) * 1 |
 //             << accel out fc_out >> // 32 bit
+//             
 
     logic [11:0] reg_addr;
     logic wr_r_valid;
