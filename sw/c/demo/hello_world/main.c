@@ -2091,21 +2091,37 @@ uint8_t label = 7;
 /*
   Beginning of user-defined variables
 */
+#define MAX_CYCLE 1 + 4 * 10
 #define MAX_TIMESTEP 28
-#define MAX_W_COUNT 32 * 4
-#define MAX_I_COUNT 32
-#define MAX_CYCLE 200
+#define MAX_X_LOOP 28 / 3 + 1
+#define MAX_H_LOOP 32 / 3 + 1
+
+#define MAX_W_COUNT 10
+#define MAX_I_COUNT 1
+#define MAX_B_COUNT 32
+
+#define MAX_U_COUNT 32
+#define MAX_H_COUNT 1
+#define real_cycle MAX_CYCLE - cycle
 
 uint8_t isInit = 1;
 
 uint8_t isRunning = 1;
-int64_t cycle     = MAX_CYCLE;
+uint64_t cycle    = MAX_CYCLE;
+
+uint8_t w_iter = 0;
+uint8_t i_iter = 0;
+uint8_t b_iter = 0;
 
 uint8_t timestep = 0;
 uint8_t x_count  = 0;
 uint8_t w_count  = 0;
 uint8_t i_count  = 0;
 
+uint8_t isWriteW = 0;
+
+/*
+ */
 uint32_t r_data  = 0;
 uint32_t w_valid = 0;
 uint32_t t_valid = 0;
@@ -2119,17 +2135,17 @@ uint32_t out_data_4 = 0;
 */
 void showSTART() {
   puts("\n");
-  puts("---------------------------------------------------------------------------");
+  puts("----------------------------------------------------");
   puts(" START ");
-  puts("---------------------------------------------------------------------------\n");
+  puts("----------------------------------------------------\n");
   puts("[UART] Start sending.....\n");
 }
 
 void showEND() {
   puts("[UART] End sending !!!\n");
-  puts("---------------------------------------------------------------------------");
+  puts("----------------------------------------------------");
   puts("- END -");
-  puts("---------------------------------------------------------------------------\n");
+  puts("----------------------------------------------------\n");
 }
 int main(void) {
   // install_exception_handler(UART_IRQ_NUM, &test_uart_irq_handler);
@@ -2137,8 +2153,8 @@ int main(void) {
   uart_enable_rx_int();
   // This indicates how often the timer gets updated.
   timer_init();
-  // timer_enable(50000000);
   timer_enable(4000000);
+  // timer_enable(1000000);
 
   uint64_t last_elapsed_time = get_elapsed_time();
 
@@ -2186,19 +2202,27 @@ int main(void) {
 
       // TODO
       if (isRunning == 1) {
-        if (cycle == 1) write_r_valid(1);
-        if (cycle == 2) write_data_in(lstm_whf[0], KERNEL_WEIGHT_F_X3);
-        if (cycle == 3) write_data_in(lstm_whi[0], KERNEL_WEIGHT_I_X3);
-        if (cycle == 4) write_data_in(lstm_who[0], KERNEL_WEIGHT_O_X3);
-        if (cycle == 5) write_data_in(lstm_whc[0], KERNEL_WEIGHT_C_TEMP_X3);
-        if (cycle == 6) write_data_in(lstm_whf[1], KERNEL_WEIGHT_F_X3);
-        if (cycle == 7) write_data_in(lstm_whi[1], KERNEL_WEIGHT_I_X3);
-        if (cycle == 8) write_data_in(lstm_who[1], KERNEL_WEIGHT_O_X3);
-        if (cycle == 9) write_data_in(lstm_whc[1], KERNEL_WEIGHT_C_TEMP_X3);
-        if (cycle == 10) write_data_in(lstm_whf[2], KERNEL_WEIGHT_F_X3);
-        if (cycle == 11) write_data_in(lstm_whi[2], KERNEL_WEIGHT_I_X3);
-        if (cycle == 12) write_data_in(lstm_who[2], KERNEL_WEIGHT_O_X3);
-        if (cycle == 13) write_data_in(lstm_whc[2], KERNEL_WEIGHT_C_TEMP_X3);
+        if (real_cycle == 1) {
+          write_r_valid(1);
+          isWriteW = 1;
+        }
+        if (isWriteW == 1) {
+          if (real_cycle == 4 * w_iter + 2) {
+            write_data_in(lstm_wxf[w_iter], KERNEL_WEIGHT_F_X3);
+          }
+          if (real_cycle == 4 * w_iter + 3) {
+            write_data_in(lstm_wxi[w_iter], KERNEL_WEIGHT_I_X3);
+          }
+          if (real_cycle == 4 * w_iter + 4) {
+            write_data_in(lstm_wxo[w_iter], KERNEL_WEIGHT_O_X3);
+          }
+          if (real_cycle == 4 * w_iter + 5) {
+            write_data_in(lstm_wxc[w_iter], KERNEL_WEIGHT_C_TEMP_X3);
+            w_iter+=1;
+          }
+        }
+        if (w_iter == MAX_W_COUNT) isWriteW = 0;
+
       }
 
       /*
@@ -2210,41 +2234,41 @@ int main(void) {
       }
 
       if (isRunning == 1) {
-        // PRINT OUTPUT
-        #pragma region
-        puts("#cycle: ");
-        puthex(cycle);
+// PRINT OUTPUT
+#pragma region
+        // puts("#cycle: ");
+        // puthex(real_cycle);
 
-        puts(" r_data=>");
-        r_data = read_r_data();
-        puthex(r_data);
+        // puts(" r_data=>");
+        // r_data = read_r_data();
+        // puthex(r_data);
 
-        puts(" w_valid=>");
-        w_valid = read_w_valid();
-        puthex(w_valid);
+        // puts(" w_valid=>");
+        // w_valid = read_w_valid();
+        // puthex(w_valid);
 
-        puts(" t_valid=>");
-        t_valid = read_t_valid();
-        puthex(t_valid);
+        // puts(" t_valid=>");
+        // t_valid = read_t_valid();
+        // puthex(t_valid);
 
-        puts(" out_data_1=>");
-        out_data_1 = read_r_data(H_t_OUT_X4_1);
-        puthex(out_data_1);
+        // puts(" out_data_1=>");
+        // out_data_1 = read_r_data(H_t_OUT_X4_1);
+        // puthex(out_data_1);
 
-        puts(" out_data_2=>");
-        out_data_2 = read_r_data(H_t_OUT_X4_2);
-        puthex(out_data_2);
+        // puts(" out_data_2=>");
+        // out_data_2 = read_r_data(H_t_OUT_X4_2);
+        // puthex(out_data_2);
 
-        puts(" out_data_3=>");
-        out_data_3 = read_r_data(H_t_OUT_X4_3);
-        puthex(out_data_4);
+        // puts(" out_data_3=>");
+        // out_data_3 = read_r_data(H_t_OUT_X4_3);
+        // puthex(out_data_4);
 
-        puts(" out_data_4=>");
-        out_data_4 = read_r_data(H_t_OUT_X4_4);
-        puthex(out_data_4);
+        // puts(" out_data_4=>");
+        // out_data_4 = read_r_data(H_t_OUT_X4_4);
+        // puthex(out_data_4);
 
         puts("\n");
-        #pragma endregion
+#pragma endregion
 
         if (cycle != 0) {
           cycle--;
